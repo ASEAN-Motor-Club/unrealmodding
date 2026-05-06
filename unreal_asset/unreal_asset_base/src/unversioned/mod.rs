@@ -384,28 +384,30 @@ impl Usmap {
             self.schemas.insert(schema.name.clone(), schema);
         }
 
-        // read extensions
-
+        // read extensions (best-effort, don't fail the whole parse)
         if reader.data_length()? > reader.position() {
-            self.extension_version = UsmapExtensionVersion::from_bits(reader.read_u32::<LE>()?)
-                .ok_or_else(|| Error::invalid_file("Invalid extension version".to_string()))?;
+            if let Ok(ext_version) = reader.read_u32::<LE>() {
+                if let Some(ext) = UsmapExtensionVersion::from_bits(ext_version) {
+                    self.extension_version = ext;
 
-            if self
-                .extension_version
-                .contains(UsmapExtensionVersion::PATHS)
-            {
-                let num_module_paths = reader.read_u16::<LE>()?;
-                let module_paths = reader
-                    .read_array_with_length(num_module_paths as i32, |reader| {
-                        Ok(reader.read_fstring()?.unwrap_or_default())
-                    })?;
+                    if self
+                        .extension_version
+                        .contains(UsmapExtensionVersion::PATHS)
+                    {
+                        let num_module_paths = reader.read_u16::<LE>()?;
+                        let module_paths = reader
+                            .read_array_with_length(num_module_paths as i32, |reader| {
+                                Ok(reader.read_fstring()?.unwrap_or_default())
+                            })?;
 
-                for (_, _, schema) in self.schemas.iter_mut() {
-                    let index = match num_module_paths > u8::MAX as u16 {
-                        true => reader.read_u16::<LE>()?,
-                        false => reader.read_u8()? as u16,
-                    };
-                    schema.module_path = Some(module_paths[index as usize].clone());
+                        for (_, _, schema) in self.schemas.iter_mut() {
+                            let index = match num_module_paths > u8::MAX as u16 {
+                                true => reader.read_u16::<LE>()?,
+                                false => reader.read_u8()? as u16,
+                            };
+                            schema.module_path = Some(module_paths[index as usize].clone());
+                        }
+                    }
                 }
             }
         }
