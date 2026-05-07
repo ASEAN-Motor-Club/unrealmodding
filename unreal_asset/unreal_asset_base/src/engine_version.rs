@@ -247,19 +247,19 @@ lazy_static! {
                 EngineVersion::VER_UE5_1
             ),
             (
-                ObjectVersionUE5::AUTOMATIC_VERSION,
+                ObjectVersionUE5::DATA_RESOURCES,
                 EngineVersion::VER_UE5_2
             ),
             (
-                ObjectVersionUE5::AUTOMATIC_VERSION,
+                ObjectVersionUE5::SCRIPT_SERIALIZATION_OFFSET,
                 EngineVersion::VER_UE5_3
             ),
             (
-                ObjectVersionUE5::AUTOMATIC_VERSION,
+                ObjectVersionUE5::PROPERTY_TAG_COMPLETE_TYPE_NAME,
                 EngineVersion::VER_UE5_4
             ),
             (
-                ObjectVersionUE5::AUTOMATIC_VERSION,
+                ObjectVersionUE5::IMPORT_TYPE_HIERARCHIES,
                 EngineVersion::VER_UE5_5
             )
         ]);
