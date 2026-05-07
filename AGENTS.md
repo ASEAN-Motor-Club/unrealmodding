@@ -252,6 +252,8 @@ The `ancestry` for row structs is `Ancestry::new(base.get_class_type_for_ancestr
 5. **EnumProperty inner type matters**: UInt16Property inner reads 2 bytes, not FName (8 bytes). Always check inner type.
 6. **Unversioned properties have no GUID**: `effective_include_header = false` — `optional_guid!` reads nothing.
 7. **Schema chain dead end**: If `super_type` is empty and property index exceeds `prop_count`, return `Ok(None)`.
+8. **ArrayProperty struct item length**: For unversioned properties, `length = 1` is hardcoded. But `ArrayProperty::new_no_header` calculates `size_est_1 = length / num_entries`, which becomes 0 for arrays with >1 entry. StructProperty with `length = 0` returns empty without reading. Fix: use `length = 1` for struct items when `has_unversioned_properties()`.
+9. **MapProperty keys_to_remove**: The Vec must be created OUTSIDE the loop, not inside. Otherwise each iteration overwrites with a single-element Vec.
 
 ## Debugging
 
@@ -268,6 +270,14 @@ The `usmap_test/` crate can be used to test asset parsing:
 ```bash
 cargo build -p usmap_test
 ./target/debug/usmap_test path/to/file.uasset path/to/file.usmap [path/to/file.uexp]
+```
+
+UAssetGUI can be used as a .NET CLI tool for cross-referencing:
+
+```bash
+export DOTNET_ROOT="/nix/store/16341mr27xkzix0a048jwj9lrzq5bk1c-dotnet-sdk-8.0.419"
+export PATH="$DOTNET_ROOT/bin:$PATH"
+cd /tmp/uasset_dumper && dotnet run -- path/to/file.uasset path/to/file.usmap
 ```
 
 ### Key reference files
