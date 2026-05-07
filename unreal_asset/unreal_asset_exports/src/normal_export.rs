@@ -59,7 +59,6 @@ impl<Index: PackageIndexTrait> NormalExport<Index> {
         if object_version_ue5 > ObjectVersionUE5::DATA_RESOURCES && !is_cdo {
             let dummy = asset.read_i32::<LE>()?;
             if dummy != 0 {
-                // Not null bytes, seek back
                 asset.seek(std::io::SeekFrom::Current(-4))?;
             }
         }
