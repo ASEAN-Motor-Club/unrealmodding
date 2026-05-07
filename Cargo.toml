@@ -17,6 +17,7 @@ members = [
     "unreal_mod_metadata",
     "unreal_pak",
     "unreal_pak_cli",
+    "usmap_test",
 ]
 
 [workspace.package]
