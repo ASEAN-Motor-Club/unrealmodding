@@ -119,7 +119,7 @@ impl UsmapSchema {
                 property.schema_index += j as u16;
 
                 properties.insert(
-                    (property.name.clone(), property.schema_index as u32),
+                    (property.name.clone(), property.array_index as u32),
                     property,
                 );
             }
@@ -344,7 +344,13 @@ impl Usmap {
             };
             let mut buf = vec![0u8; name_length];
             reader.read_exact(&mut buf)?;
-            Ok(String::from_utf8(buf)?)
+            // Strip trailing null if present (CUE4Parse ReadString behavior)
+            let end = if name_length > 0 && buf[name_length - 1] == 0 {
+                name_length - 1
+            } else {
+                name_length
+            };
+            Ok(String::from_utf8(buf[..end].to_vec())?)
         })?;
 
         let enum_len = reader.read_u32::<LE>()?;

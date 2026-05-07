@@ -530,8 +530,10 @@ impl Property {
         let length: i32;
         let duplication_index: i32;
         let mut is_zero = false;
+        let mut effective_include_header = include_header;
 
         if asset.has_unversioned_properties() {
+            effective_include_header = false;
             let header = unversioned_header.ok_or_else(PropertyError::no_unversioned_header)?;
             let mappings = asset
                 .get_mappings()
@@ -539,14 +541,19 @@ impl Property {
             let parent_name = ancestry.get_parent().ok_or_else(PropertyError::no_parent)?;
 
             loop {
-                let current_fragment = header.fragments[header.current_fragment_index];
-                if header.unversioned_property_index > current_fragment.get_last_num() as usize {
+                if header.current_fragment_index >= header.fragments.len() {
+                    return Ok(None);
+                }
+            let current_fragment = header.fragments[header.current_fragment_index.min(header.fragments.len() - 1)];
+                if header.unversioned_property_index <= current_fragment.get_last_num() as usize {
                     break;
                 }
 
                 header.current_fragment_index += 1;
-                header.unversioned_property_index =
-                    header.fragments[header.current_fragment_index].first_num as usize;
+                if header.current_fragment_index < header.fragments.len() {
+                    header.unversioned_property_index =
+                        header.fragments[header.current_fragment_index].first_num as usize;
+                }
             }
 
             let mut practicing_unversioned_property_index = header.unversioned_property_index;
@@ -562,10 +569,15 @@ impl Property {
             while practicing_unversioned_property_index >= schema.prop_count as usize {
                 practicing_unversioned_property_index -= schema.prop_count as usize;
 
+                if schema.super_type.is_empty() {
+                    return Ok(None);
+                }
+
+                let super_type = &schema.super_type;
                 let new_schema =
                     mappings
                         .schemas
-                        .get_by_key(&schema.super_type)
+                        .get_by_key(super_type.as_str())
                         .ok_or_else(|| {
                             PropertyError::no_schema(
                                 parent_name.get_owned_content(),
@@ -613,7 +625,7 @@ impl Property {
             &property_type,
             name,
             ancestry,
-            include_header,
+            effective_include_header,
             length as i64,
             0,
             duplication_index,
