@@ -1,6 +1,8 @@
 //! Normal export
 
 use unreal_asset_base::{
+    flags::EObjectFlags,
+    object_version::ObjectVersionUE5,
     reader::{ArchiveReader, ArchiveWriter},
     types::PackageIndexTrait,
     unversioned::{header::UnversionedHeader, Ancestry},
@@ -10,6 +12,7 @@ use unreal_asset_properties::{generate_unversioned_header, Property};
 
 use crate::BaseExport;
 use crate::{ExportBaseTrait, ExportNormalTrait, ExportTrait};
+use byteorder::{ReadBytesExt, WriteBytesExt, LE};
 
 /// Normal export
 ///
@@ -50,6 +53,17 @@ impl<Index: PackageIndexTrait> NormalExport<Index> {
         base: &BaseExport<Index>,
         asset: &mut Reader,
     ) -> Result<Self, Error> {
+        // UE5.4+ leading 4 null bytes (see UAssetAPI NormalExport.Read)
+        let object_version_ue5 = asset.get_object_version_ue5();
+        let is_cdo = base.object_flags.contains(EObjectFlags::RF_CLASS_DEFAULT_OBJECT);
+        if object_version_ue5 > ObjectVersionUE5::DATA_RESOURCES && !is_cdo {
+            let dummy = asset.read_i32::<LE>()?;
+            if dummy != 0 {
+                // Not null bytes, seek back
+                asset.seek(std::io::SeekFrom::Current(-4))?;
+            }
+        }
+
         let mut properties = Vec::new();
 
         let mut unversioned_header = UnversionedHeader::new(asset)?;
@@ -58,6 +72,14 @@ impl<Index: PackageIndexTrait> NormalExport<Index> {
             Property::new(asset, ancestry.clone(), unversioned_header.as_mut(), true)?
         {
             properties.push(e);
+        }
+
+        // Read ObjectGuid presence (i32, not byte — UAssetAPI uses ReadBooleanInt)
+        if !is_cdo {
+            let has_guid = asset.read_i32::<LE>()?;
+            if has_guid != 0 {
+                let _guid = asset.read_guid()?;
+            }
         }
 
         Ok(NormalExport {
