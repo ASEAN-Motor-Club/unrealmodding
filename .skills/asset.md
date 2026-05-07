@@ -30,7 +30,8 @@ Unversioned assets use a **schema-driven** format: the usmap defines which prope
 ### NormalExport flow (UE5.4+)
 
 ```
-1. Leading 4 null bytes check (UE5.4+, reads i32, seeks back if non-zero)
+1. Leading 4 null bytes check (range-guarded: DATA_RESOURCES < version < ASSETREGISTRY_PACKAGEBUILDDEPENDENCIES)
+   - Reads i32; if zero, consumes it; if non-zero, seeks back
 2. UnversionedHeader: fragments + zero mask
 3. Property loop: Property::new() until None
 4. ObjectGuid: i32 presence (NOT bool), optional 16-byte GUID

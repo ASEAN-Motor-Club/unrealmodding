@@ -127,7 +127,7 @@ Properties are stored in `IndexedMap` keyed by `(name: String, array_index: u32)
 Reference: [UAssetAPI NormalExport.cs](https://github.com/atenfyr/UAssetAPI/blob/master/UAssetAPI/ExportTypes/NormalExport.cs)
 
 ```
-[UE5.4+ only, if ObjectVersionUE5 > DATA_RESOURCES and not CDO]:
+[leading 4 null bytes check — only for DATA_RESOURCES < ObjectVersionUE5 < ASSETREGISTRY_PACKAGEBUILDDEPENDENCIES, not CDO]:
   i32   leading_check  // if non-zero, seek back (no-op); if zero, consume 4 bytes
 
 [unversioned properties]:
@@ -142,7 +142,7 @@ Reference: [UAssetAPI NormalExport.cs](https://github.com/atenfyr/UAssetAPI/blob
 
 Key differences from CUE4Parse:
 - **ObjectGuid presence is i32 (4 bytes)**, not `ReadBoolean()` (1 byte). UAssetAPI writes `writer.Write((int)0)` for no GUID.
-- **Leading 4 null bytes check**: UAssetAPI-specific for UE5.4. Reads 4 bytes; if zero, consumes them; if non-zero, seeks back.
+- **Leading 4 null bytes check**: Range-guarded: `ObjectVersionUE5::DATA_RESOURCES < version < ObjectVersionUE5::ASSETREGISTRY_PACKAGEBUILDDEPENDENCIES`. Reads 4 bytes; if zero, consumes them; if non-zero, seeks back.
 
 ### UnversionedHeader
 

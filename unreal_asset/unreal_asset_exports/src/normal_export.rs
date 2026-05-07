@@ -53,12 +53,18 @@ impl<Index: PackageIndexTrait> NormalExport<Index> {
         base: &BaseExport<Index>,
         asset: &mut Reader,
     ) -> Result<Self, Error> {
-        // UE5.4+ leading 4 null bytes (see UAssetAPI NormalExport.Read)
         let object_version_ue5 = asset.get_object_version_ue5();
         let is_cdo = base.object_flags.contains(EObjectFlags::RF_CLASS_DEFAULT_OBJECT);
-        if object_version_ue5 > ObjectVersionUE5::DATA_RESOURCES && !is_cdo {
+
+        // UE5.4+ leading 4 null bytes check (UAssetAPI NormalExport.Read)
+        // Only applies for versions between DATA_RESOURCES and ASSETREGISTRY_PACKAGEBUILDDEPENDENCIES
+        if object_version_ue5 > ObjectVersionUE5::DATA_RESOURCES
+            && object_version_ue5 < ObjectVersionUE5::ASSETREGISTRY_PACKAGEBUILDDEPENDENCIES
+            && !is_cdo
+        {
             let dummy = asset.read_i32::<LE>()?;
             if dummy != 0 {
+                // Not null bytes — seek back, this is property data
                 asset.seek(std::io::SeekFrom::Current(-4))?;
             }
         }
@@ -73,7 +79,7 @@ impl<Index: PackageIndexTrait> NormalExport<Index> {
             properties.push(e);
         }
 
-        // Read ObjectGuid presence (i32, not byte — UAssetAPI uses ReadBooleanInt)
+        // Read ObjectGuid (UAssetAPI: ReadBooleanInt reads i32, not byte)
         if !is_cdo {
             let has_guid = asset.read_i32::<LE>()?;
             if has_guid != 0 {
