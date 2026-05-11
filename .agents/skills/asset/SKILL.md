@@ -1,3 +1,11 @@
+---
+name: asset
+description: Parse .uasset and .uexp files using usmap type mappings (unversioned properties). Use when reading, debugging, or extending Unreal Engine asset parsing — including NormalExport, DataTableExport, property dispatch, and the UnversionedHeader format.
+metadata:
+  project: unrealmodding
+  language: rust
+---
+
 # Asset Parsing Skill
 
 Parse `.uasset` / `.uexp` files using usmap type mappings (unversioned properties).

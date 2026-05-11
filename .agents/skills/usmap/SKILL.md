@@ -1,3 +1,11 @@
+---
+name: usmap
+description: Parse and debug .usmap files (Unreal Engine type mapping format). Use when reading, writing, or troubleshooting usmap binary parsing — including name maps, enum maps, schema maps, compression, and version handling (v0–v4).
+metadata:
+  project: unrealmodding
+  language: rust
+---
+
 # Usmap Parsing Skill
 
 Parse and debug `.usmap` files (Unreal Engine type mapping format).
